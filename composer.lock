@@ -1,0 +1,65 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "00137d6825ce6cd37e64406b3d721a67",
+    "packages": [
+        {
+            "name": "sj-i/php-fuse",
+            "version": "v0.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sj-i/php-fuse.git",
+                "reference": "7aa42fd16005170a785999ff02a607dfb23b25b2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sj-i/php-fuse/zipball/7aa42fd16005170a785999ff02a607dfb23b25b2",
+                "reference": "7aa42fd16005170a785999ff02a607dfb23b25b2",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ffi": "*",
+                "php": "^7.4|^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Fuse\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "sji",
+                    "homepage": "https://twitter.com/sji_ch"
+                }
+            ],
+            "description": "PHP FFI bindings for FUSE",
+            "keywords": [
+                "ffi",
+                "fuse",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/sj-i/php-fuse/issues",
+                "source": "https://github.com/sj-i/php-fuse/tree/v0.0.1"
+            },
+            "time": "2020-12-27T22:31:11+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.0.0"
+}

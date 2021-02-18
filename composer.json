@@ -1,0 +1,26 @@
+{
+    "name": "sj-i/php-variable-fs",
+    "description": "a FUSE filesystem to access any PHP variables",
+    "type": "library",
+    "minimum-stability": "dev",
+    "license": "MIT",
+    "keywords": [
+        "php",
+        "fuse",
+        "ffi"
+    ],
+    "authors": [
+        {
+            "name": "sji",
+            "homepage": "https://twitter.com/sji_ch"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "PhpVariableFilesystem\\" : "src/"
+        }
+    },
+    "require": {
+        "sj-i/php-fuse": "^0.0.1"
+    }
+}
