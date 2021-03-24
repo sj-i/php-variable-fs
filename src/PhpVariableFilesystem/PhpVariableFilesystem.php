@@ -13,21 +13,19 @@ declare(strict_types=1);
 
 namespace PhpVariableFilesystem;
 
-use FFI;
-use FFI\CData;
 use Fuse\FilesystemDefaultImplementationTrait;
 use Fuse\FilesystemInterface;
-use Fuse\Fuse;
+use Fuse\Libc\Errno\Errno;
+use Fuse\Libc\Fuse\FuseFileInfo;
+use Fuse\Libc\Fuse\FuseFillDir;
+use Fuse\Libc\Fuse\FuseReadDirBuffer;
+use Fuse\Libc\String\CBytesBuffer;
+use Fuse\Libc\Sys\Stat\Stat;
 use PhpVariableFilesystem\Lib\ArrayUtils\ArrayEntryLocator;
 
 final class PhpVariableFilesystem implements FilesystemInterface
 {
     use FilesystemDefaultImplementationTrait;
-
-    private const ENOENT = 2;
-    private const ENOTDIR = 20;
-    private const S_IFDIR = 0040000;
-    private const S_IFREG = 0100000;
 
     private ArrayEntryLocator $array_entry_locator;
 
@@ -44,60 +42,60 @@ final class PhpVariableFilesystem implements FilesystemInterface
         return $this->array;
     }
 
-    public function getattr(string $path, CData $stat): int
+    public function getattr(string $path, Stat $stat): int
     {
         $element = $this->getEntry($path);
         if (is_null($element)) {
-            return -self::ENOENT;
+            return -Errno::ENOENT;
         }
-
-        $this->initializeStructStat($stat);
 
         $stat->st_uid = getmyuid();
         $stat->st_gid = getmygid();
 
         if (is_array($element)) {
-            $stat->st_mode = self::S_IFDIR | 0777;
+            $stat->st_mode = Stat::S_IFDIR | 0777;
             $stat->st_nlink = 2; // fixme: there may be subdirectories
             return 0;
         }
-        $stat->st_mode = self::S_IFREG | 0777;
+        $stat->st_mode = Stat::S_IFREG | 0777;
         $stat->st_nlink = 1;
         $stat->st_size = strlen((string)$element);
         return 0;
     }
 
-    /**
-     * @param CData|callable $filler
-     */
-    public function readdir(string $path, CData $buf, CData $filler, int $offset, CData $fi): int
-    {
+    public function readdir(
+        string $path,
+        FuseReadDirBuffer $buf,
+        FuseFillDir $filler,
+        int $offset,
+        FuseFileInfo $fuse_file_info
+    ): int {
         $filler($buf, '.', null, 0);
         $filler($buf, '..', null, 0);
         $entry = $this->getEntry($path);
         if (!is_array($entry)) {
-            return self::ENOTDIR;
+            return Errno::ENOTDIR;
         }
-        foreach ($entry as $key => $value) {
+        foreach ($entry as $key => $_) {
             $filler($buf, (string)$key, null, 0);
         }
 
         return 0;
     }
-
-    public function open(string $path, CData $fi): int
+    public function open(string $path, FuseFileInfo $fuse_file_info): int
     {
         $entry = $this->getEntry($path);
         if (!is_scalar($entry)) {
-            return -self::ENOENT;
+            return -Errno::ENOENT;
         }
         return 0;
     }
 
-    public function read(string $path, CData $buf, int $size, int $offset, CData $fi): int
+    public function read(string $path, CBytesBuffer $buffer, int $size, int $offset, FuseFileInfo $fuse_file_info): int
     {
         $entry = $this->getEntry($path);
 
+        assert(!is_array($entry));
         $len = strlen((string)$entry);
 
         if ($offset + $size > $len) {
@@ -105,27 +103,29 @@ final class PhpVariableFilesystem implements FilesystemInterface
         }
 
         $content = substr((string)$entry, $offset, $size);
-        FFI::memcpy($buf, $content, $size);
+        $buffer->write($content, $size);
 
         return $size;
     }
 
-    public function write(string $path, string $buffer, int $size, int $offset, CData $fuse_file_info): int
+    public function write(string $path, string $buffer, int $size, int $offset, FuseFileInfo $fuse_file_info): int
     {
         $entry = &$this->getEntry($path);
-        $entry = substr_replace($entry, $buffer, $offset, $size);
+
+        assert(!is_array($entry));
+        $entry = substr_replace((string)$entry, $buffer, $offset, $size);
 
         return $size;
     }
 
-    public function create(string $path, int $mode, CData $fuse_file_info): int
+    public function create(string $path, int $mode, FuseFileInfo $fuse_file_info): int
     {
         $entry = &$this->getParentEntry($path);
         if (is_array($entry)) {
             $entry[basename($path)] = '';
             return 0;
         } else {
-            return self::ENOENT;
+            return Errno::ENOENT;
         }
     }
 
@@ -143,7 +143,7 @@ final class PhpVariableFilesystem implements FilesystemInterface
             $this->unsetEntry($from);
             return 0;
         } else {
-            return self::ENOENT;
+            return Errno::ENOENT;
         }
     }
 
@@ -155,6 +155,9 @@ final class PhpVariableFilesystem implements FilesystemInterface
         return $this->array_entry_locator->getEntry($path, $this->array);
     }
 
+    /**
+     * @return array|null
+     */
     private function &getParentEntry(string $path)
     {
         return $this->array_entry_locator->getParentEntry($path, $this->array);
@@ -163,18 +166,5 @@ final class PhpVariableFilesystem implements FilesystemInterface
     private function unsetEntry(string $path): void
     {
         $this->array_entry_locator->unsetEntry($path, $this->array);
-    }
-
-    private function initializeStructStat(CData $struct_stat): void
-    {
-        $typename = 'struct stat';
-        $type = Fuse::getInstance()->ffi->type(
-            $typename
-        );
-        $size = FFI::sizeof(
-            $type
-        );
-
-        FFI::memset($struct_stat, 0, $size);
     }
 }
