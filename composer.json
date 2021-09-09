@@ -28,7 +28,7 @@
     "require": {
         "php": "^7.4|^8.0",
         "ext-ffi": "*",
-        "sj-i/php-fuse": "^0.2.0"
+        "sj-i/php-fuse": "^0.2.0 || ^0.3.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
